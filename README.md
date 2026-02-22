@@ -42,3 +42,5 @@ You need a C compiler (like `gcc`) installed on your system (Linux, macOS, or An
 ### - Posix SOCKETS
 
 ### You can freely use, distribute, modify the tool.
+
+There will be updates of utility soon
