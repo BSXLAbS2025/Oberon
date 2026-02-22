@@ -24,7 +24,7 @@ You need a C compiler (like `gcc`) installed on your system (Linux, macOS, or An
 1. Clone the repository:
    ```bash
    git clone https://github.com
-   cd OberonScanner
+   cd Oberon
 2. Run:
    ```bash
    gcc oberon.c -o oberon
