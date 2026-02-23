@@ -48,5 +48,7 @@ jobs:
       with:
         name: oberon-${{ matrix.os }}
         path: |
-          ${{ steps.strings.outputs.build-output-dir }}/oberon
-          ${{ steps.strings.outputs.build-output-dir }}/Release/oberon.exe
+          build/oberon
+          build/oberon.exe
+          build/Release/oberon.exe
+        if-no-files-found: error
