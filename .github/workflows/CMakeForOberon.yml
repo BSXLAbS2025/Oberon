@@ -58,7 +58,7 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: oberon-${{ matrix.os }}
+          name: oberon-v4-final-${{ matrix.os }}
           path: |
             build/oberon
             build/Release/oberon.exe
