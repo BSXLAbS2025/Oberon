@@ -1,54 +1,85 @@
-name: CMake Multi-Platform Build
+name: Oberon v4.0 Ultimate Multi-Arch
 
 on:
   push:
     branches: [ "main" ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ "main" ]
+    tags: [ "v*" ]
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-
+  build-linux-multi:
+    name: Build Linux (${{ matrix.arch }})
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        build_type: [Release]
+        # Собираем под стандартный ПК, старый ПК и ARM (серверы/телефоны)
         include:
-          - os: windows-latest
-            c_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: clang
-          - os: macos-latest
-            c_compiler: clang
+          - arch: amd64
+            pkg: ""
+            flags: ""
+          - arch: i386
+            pkg: "gcc-multilib"
+            flags: "-DCMAKE_C_FLAGS=-m32"
+          - arch: arm64
+            pkg: "gcc-aarch64-linux-gnu"
+            flags: "-DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc"
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        if: matrix.pkg != ''
+        run: sudo apt-get update && sudo apt-get install -y ${{ matrix.pkg }}
+      
+      - name: Configure CMake
+        run: cmake -B build ${{ matrix.flags }} -DCMAKE_BUILD_TYPE=Release
+      
+      - name: Build
+        run: cmake --build build
+        
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: oberon-linux-${{ matrix.arch }}
+          path: build/oberon
 
-    - name: Set reusable strings
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+  build-windows-mac:
+    name: Build Windows/Mac
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
 
-    - name: Configure CMake
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure & Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+          
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: oberon-${{ matrix.os }}
+          path: |
+            build/oberon
+            build/Release/oberon.exe
 
-    - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-
-    - name: Upload Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: oberon-${{ matrix.os }}
-        path: |
-          build/oberon
-          build/oberon.exe
-          build/Release/oberon.exe
-        if-no-files-found: error
+  release:
+    needs: [build-linux-multi, build-windows-mac]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Organize Assets
+        run: |
+          mkdir release_files
+          cp oberon-linux-amd64/oberon release_files/oberon-linux-amd64
+          cp oberon-linux-i386/oberon release_files/oberon-linux-i386
+          cp oberon-linux-arm64/oberon release_files/oberon-linux-arm64
+          cp oberon-macos-latest/oberon release_files/oberon-macos-universal
+          cp oberon-windows-latest/oberon.exe release_files/oberon.exe
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release_files/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
