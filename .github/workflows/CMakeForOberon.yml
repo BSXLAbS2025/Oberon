@@ -63,6 +63,11 @@ jobs:
             build/oberon
             build/Release/oberon.exe
 
+      - name: Clean and Configure
+        run: |
+          rm -rf build
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+
   release:
     needs: [build-linux-multi, build-windows-mac]
     if: startsWith(github.ref, 'refs/tags/v')
