@@ -9,9 +9,33 @@ void print_bar(int current, int total) {
     fflush(stdout);
 }
 
+void try_load_module(char *ip, int port, char *flag) {
+    char path[512];
+#ifdef _WIN32
+    snprintf(path, sizeof(path), "modules/%s.dll", flag + 1); // ищем по флагу, например -web -> web.dll
+    HMODULE hMod = LoadLibraryA(path);
+    if (hMod) {
+        void (*run)(char*, int) = (void (*)(char*, int))GetProcAddress(hMod, "run_module");
+        if (run) run(ip, port);
+        FreeLibrary(hMod);
+    }
+#else
+    snprintf(path, sizeof(path), "./modules/%s.so", flag + 1); // -web -> ./modules/web.so
+    void *hMod = dlopen(path, RTLD_LAZY);
+    if (hMod) {
+        void (*run)(char*, int) = (void (*)(char*, int))dlsym(hMod, "run_module");
+        if (run) run(ip, port);
+        dlclose(hMod);
+    }
+#endif
+}
+
 int main(int argc, char *argv[]) {
     init_networking();
 
+    if (strcmp(argv[4], "-t") != 0 && strcmp(argv[4], "-u") != 0 && strcmp(argv[4], "-b") != 0) {
+        try_load_module(ip, port, argv[4]);
+    
     if (argc < 5) {
         printf(CLR_CYAN "\n[ OBERON MULTI-THREADED v4.0-Patch 2 ]\n" CLR_RESET);
         printf("Usage: %s <target> <start> <end> <mode> (-t, -u, -b)\n", argv[0]);
@@ -93,8 +117,6 @@ void run_external_module(char *target_ip, int port, char *requested_flag) {
     } while (FindNextFileA(hFind, &findData));
     FindClose(hFind);
 #else
-        }
-    }
     closedir(dir);
 #endif
 }
