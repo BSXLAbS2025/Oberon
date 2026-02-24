@@ -44,6 +44,8 @@
     #define LIB_EXT ".so"
 #endif
 
+typedef void (*module_run_func)(char*, int);
+
 // Цвета
 #define CLR_RESET  "\033[0m"
 #define CLR_GREEN  "\033[1;32m"
