@@ -17,7 +17,14 @@
     // Макрос для запуска потока на Windows
     #define THREAD_FUNC DWORD WINAPI
     #define THREAD_HANDLE HANDLE
+    #define LIB_HANDLE HMODULE
+    #define LOAD_LIB(path) LoadLibraryA(path)
+    #define GET_FUNC GetProcAddress
+    #define CLOSE_LIB FreeLibrary
+    #define LIB_EXT ".dll"
 #else
+    #include <dlfcn.h>
+    #include <dirent.h>
     #include <sys/socket.h>
     #include <arpa/inet.h>
     #include <unistd.h>
@@ -30,6 +37,11 @@
     // Макрос для запуска потока на Linux/Mac
     #define THREAD_FUNC void*
     #define THREAD_HANDLE pthread_t
+    #define LIB_HANDLE void*
+    #define LOAD_LIB(path) dlopen(path, RTLD_LAZY)
+    #define GET_FUNC dlsym
+    #define CLOSE_LIB dlclose
+    #define LIB_EXT ".so"
 #endif
 
 // Цвета
