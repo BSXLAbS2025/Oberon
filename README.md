@@ -1,7 +1,7 @@
 # Oberon
 A lightweight C-based network scanner with DNS resolution and banner grabbing.
 
-# 🛰️ Oberon Network Scanner v3.0
+# 🛰️ Oberon Network Scanner v4.0
 
 **Oberon** is a lightweight, high-performance network reconnaissance tool written in pure **C**. Designed for ethical hackers and security enthusiasts, it provides essential features for network discovery and service identification.
 
