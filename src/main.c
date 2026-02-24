@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     init_networking();
 
     if (argc < 5) {
-        printf(CLR_CYAN "\n[ OBERON MULTI-THREADED v4.0 ]\n" CLR_RESET);
+        printf(CLR_CYAN "\n[ OBERON MULTI-THREADED v4.0-Patch 2 ]\n" CLR_RESET);
         printf("Usage: %s <target> <start> <end> <mode> (-t, -u, -b)\n", argv[0]);
         return 0;
     }
