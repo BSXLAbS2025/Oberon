@@ -59,3 +59,42 @@ int main(int argc, char *argv[]) {
     cleanup_networking();
     return 0;
 }
+
+void run_external_module(char *target_ip, int port, char *requested_flag) {
+    char mod_path[512];
+    
+#ifdef _WIN32
+    WIN32_FIND_DATAA findData;
+    HANDLE hFind = FindFirstFileA("modules/*.dll", &findData);
+    if (hFind == INVALID_HANDLE_VALUE) return;
+    do {
+        snprintf(mod_path, sizeof(mod_path), "modules/%s", findData.cFileName);
+#else
+    DIR *dir = opendir("modules");
+    struct dirent *entry;
+    if (!dir) return;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strstr(entry->d_name, LIB_EXT)) {
+            snprintf(mod_path, sizeof(mod_path), "modules/%s", entry->d_name);
+#endif
+            
+            LIB_HANDLE hMod = LOAD_LIB(mod_path);
+            if (hMod) {
+                // Ищем в модуле строку с его флагом
+                char **mod_flag = (char**)GET_FUNC(hMod, "module_flag");
+                
+                if (mod_flag && strcmp(*mod_flag, requested_flag) == 0) {
+                    module_run_func run = (module_run_func)GET_FUNC(hMod, "run_module");
+                    if (run) run(target_ip, port);
+                }
+                CLOSE_LIB(hMod);
+            }
+#ifdef _WIN32
+    } while (FindNextFileA(hFind, &findData));
+    FindClose(hFind);
+#else
+        }
+    }
+    closedir(dir);
+#endif
+}
