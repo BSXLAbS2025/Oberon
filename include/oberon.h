@@ -60,4 +60,9 @@ typedef struct {
     int delay;
 } scan_task_t;
 
+// Прототипы из core.c
+void init_networking();
+void cleanup_networking();
+char* resolve_host(char *hostname);
+
 #endif
