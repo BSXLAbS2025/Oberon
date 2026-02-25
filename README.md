@@ -1,64 +1,58 @@
-# Oberon
-A lightweight C-based network scanner with DNS resolution and banner grabbing.
+`
+Oberon Network Scanner v4.0
+Oberon is a lightweight, high-performance network reconnaissance tool written in C99. Designed for ethical hackers and security enthusiasts, it provides essential features for discovery and service identification across Linux, Windows, macOS, and Android (Termux).
 
-# 🛰️ Oberon Network Scanner v4.0
+✨ Features
+Multi-threaded Engine: High-speed scanning with a managed thread pool.
 
-**Oberon** is a lightweight, high-performance network reconnaissance tool written in pure **C**. Designed for ethical hackers and security enthusiasts, it provides essential features for network discovery and service identification.
+TCP Connect Scan: Reliable identification of open TCP ports.
 
-Developed as a personal project to understand low-level socket programming and network protocols.
+UDP Scanning: Detection of open/filtered UDP services + Banner grabbing.
 
-## ✨ Features
-- **TCP Connect Scan**: Reliable identification of open TCP ports.
-- **UDP Scanning**: Detection of open/filtered UDP services.
-- **DNS Resolution**: Scan targets using both IP addresses and Domain Names (e.g., `google.com`).
-- **Banner Grabbing**: Attempts to identify service versions (HTTP, SSH, etc.) upon connection.
-- **Visual Progress Bar**: Real-time feedback during long scans.
-- **Fast & Lightweight**: Zero dependencies, compiled to a tiny binary.
+Stealth Mode: Optional -s flag to add a 200ms delay between requests to bypass simple IDS.
 
-## 🚀 Getting Started
+DNS Resolution: Scan targets using IP addresses or hostnames (e.g., google.com).
 
-### Prerequisites
-You need a C compiler (like `gcc`) installed on your system (Linux, macOS, or Android/NetHunter).
+Dynamic Modules: Extend functionality without recompiling the core.
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com
-   cd Oberon
-2. Run:
-   ```bash
-   gcc oberon.c -o oberon
-### Use:
-**WINDOWS**:
-   1. Download Archive from "Releases" page
-   2. Unzip to a folder
-   3. Run: oberon <target> <start> <end> <mode> [options]
+🚀 Installation & Build
+Prerequisites
+CMake (v3.10+)
 
-**Linux**
-   1. Download or compile Oberon
-   2. Open terminal
-   3. Give chmod rights (+x) 
-   4. Send Oberon to $PATH (for using oberon, instead of ./oberon)
-   5. Use 
+C Compiler (GCC, Clang, or MSVC)
 
-**MacOS**
-   1. Download Archive
-   2. Unzip to a folder
-   3. Give chmod rights (+x)
-   4. Use (./)
+Building from source
+Bash
+`
+git clone https://github.com/BSXLAbS2025/Oberon
+cd Oberon
+cmake -B build
+cmake --build build --config Release
+The executable will be located in the build/ directory. On Windows, check build/Release/.
+`
+### 1. Creating Custom Modules (Plugins)
+Oberon v4.0 supports dynamic loading. Just drop a .so (Linux/macOS) or .dll (Windows) into the ./modules/ folder.
 
-### Options, ports, modes and targets
-   - Targets (IP Adresses, hosts (e.g. google.com)
-   - Start/End (Ports, e.g. 80 80, or 80 100)
-   - Mode (Scan modes (-t (TCP), -u (UDP)) 
-   - Options (-s (Stealth, 200ms per every check) 
+2. Compilation Commands
+Linux / Termux / macOS:
+Bash:
+`gcc -shared -fPIC my_plugin.c -I./include -o modules/my_plugin.so`
 
-### WARN! This tool is for educational and ethical testing purposes only. Scanning targets without prior authorization is illegal. The developer is not responsible for any misuse of this software.
+Windows (MinGW):
+Bash:
+`gcc -shared my_plugin.c -I./include -o modules/my_plugin.dll -lws2_32`
 
-### Used:
-1. - C (Language)
-2. - Posix SOCKETS
+### 📖 Usage
 
-### You can freely use, distribute, modify the tool.
+Bash:
+`oberon <target> <start_port> <end_port> <mode> [options]`
 
-There will be updates of utility soon
+`Argument|Description
+<target>"|IP Address or Hostname (e.g., 192.168.1.1 or google.com)"
+<mode>   |"-t (TCP), -u (UDP), or custom module flag (e.g., -info)"
+[options]|-s (Stealth Mode: 200ms delay per port)`
+
+### ⚠️ Disclaimer
+This tool is for educational and ethical testing purposes only. Scanning targets without prior authorization is illegal. The developer is not responsible for any misuse of this software.
+
+### Project Status: Alive & Active 🚀
