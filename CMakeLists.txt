@@ -1,35 +1,30 @@
 cmake_minimum_required(VERSION 3.10)
 project(Oberon C)
 
-# Устанавливаем стандарт C99
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Чтобы CMake не подсовывал старые объектные файлы (лечим v3.3)
-set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+# Лечим проблему v3.3: Принудительно задаем версию через макрос
+add_definitions(-DOBERON_VERSION="v4.0-Patch2")
 
-# Пути к заголовкам
 include_directories(include)
 
-# Собираем ТОЛЬКО ядро (все .c в корне src, кроме папки modules)
-file(GLOB CORE_SOURCES "src/*.c")
-add_executable(oberon ${CORE_SOURCES})
+# Собираем все .c файлы в src и src/modules (встроенные модули)
+file(GLOB_RECURSE SOURCES "src/*.c")
 
-# Настройка библиотек для Ядра
+add_executable(oberon ${SOURCES})
+
 if(WIN32)
     target_link_libraries(oberon ws2_32)
-    # Для Windows разрешаем экспорт функций, если нужно
+    # Позволяет ядру экспортировать символы для плагинов
     set_target_properties(oberon PROPERTIES ENABLE_EXPORTS TRUE)
 else()
-    # Для Linux/Mac/Termux добавляем потоки и библиотеку для загрузки плагинов (dl)
     find_package(Threads REQUIRED)
+    # CMAKE_DL_LIBS линкует libdl для работы dlopen/dlsym
     target_link_libraries(oberon Threads::Threads ${CMAKE_DL_LIBS})
 endif()
 
-# --- СЕКЦИЯ МОДУЛЕЙ (Плагины) ---
-# Если хочешь собрать тестовый модуль сразу, раскомментируй строки ниже:
-# add_library(web_ui MODULE src/modules/web_ui.c)
-# set_target_properties(web_ui PROPERTIES PREFIX "" SUFFIX ".so") # или .dll на Win
-
-# Инструкция по установке
-install(TARGETS oberon DESTINATION bin)
+# Создаем папку modules в директории сборки, если её нет
+add_custom_command(TARGET oberon POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:oberon>/modules
+)
