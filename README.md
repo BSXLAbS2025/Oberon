@@ -1,8 +1,8 @@
-`
-Oberon Network Scanner v4.0
+### Oberon Network Scanner v4.0
+
 Oberon is a lightweight, high-performance network reconnaissance tool written in C99. Designed for ethical hackers and security enthusiasts, it provides essential features for discovery and service identification across Linux, Windows, macOS, and Android (Termux).
 
-✨ Features
+### ✨ Features
 Multi-threaded Engine: High-speed scanning with a managed thread pool.
 
 TCP Connect Scan: Reliable identification of open TCP ports.
@@ -15,7 +15,7 @@ DNS Resolution: Scan targets using IP addresses or hostnames (e.g., google.com).
 
 Dynamic Modules: Extend functionality without recompiling the core.
 
-🚀 Installation & Build
+### 🚀 Installation & Build
 Prerequisites
 CMake (v3.10+)
 
