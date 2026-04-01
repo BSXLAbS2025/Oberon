@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
     if (argc < 5) {
         printf(CLR_CYAN "\n[ OBERON MULTI-THREADED v4.0 RC3 ]\n" CLR_RESET);
         printf("Usage: %s <target> <start> <end> <mode> [options]\n", argv[0]);
+        printf("Mode: -t (TCP), -u (UDP)\n");
         printf("Options: -s (Stealth), -j (JSON output)\n");
         return 0;
     }
