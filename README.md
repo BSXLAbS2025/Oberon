@@ -15,6 +15,12 @@ DNS Resolution: Scan targets using IP addresses or hostnames (e.g., google.com).
 
 Dynamic Modules: Extend functionality without recompiling the core.
 
+Smart Scan: searching top-ports opened (Redis, MySql and etc.).
+
+TTL + OS fingerprinting.
+
+Json Output - Use an automated Python, C, and etc. programming language written scripts.
+
 ### 🚀 Installation & Build
 Prerequisites
 CMake (v3.10+)
@@ -55,4 +61,10 @@ Bash:
 ### ⚠️ Disclaimer
 This tool is for educational and ethical testing purposes only. Scanning targets without prior authorization is illegal. The developer is not responsible for any misuse of this software.
 
-### Project Status: Alive & Active 🚀
+### Project Status: Frozen ❆
+
+### Project status descriptions:
+
+- Alive & Active - Development continues as usual 
+- Frozen - Stopped for a some time
+- Stopped/Canceled - Stopped for forever
