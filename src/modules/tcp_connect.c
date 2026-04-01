@@ -1,7 +1,6 @@
 #include "oberon.h"
 
-// Глобальный счетчик для детектирования Honeypot (ловушек)
-// Если открытых портов слишком много, это подозрительно
+// Глобальный счетчик для детектирования Honeypot
 static int open_ports_count = 0;
 
 void* tcp_connect_mod(void* arg) {
@@ -12,9 +11,9 @@ void* tcp_connect_mod(void* arg) {
         return NULL;
     }
 
-    // 1. Настройка таймаута соединения (чтобы не ждать по 20 секунд)
+    // Настройка таймаута
 #ifdef _WIN32
-    DWORD timeout = 1000; // 1 сек
+    DWORD timeout = 1000;
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
     setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
 #else
@@ -28,12 +27,13 @@ void* tcp_connect_mod(void* arg) {
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_port = htons(task->port);
-    addr.sin_addr.s_s_addr = inet_addr(task->ip);
+    // ИСПРАВЛЕНО: s_addr вместо s_s_addr
+    addr.sin_addr.s_addr = inet_addr(task->ip);
 
     if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
         open_ports_count++;
 
-        // --- ФИЧА: OS FINGERPRINTING (TTL) ---
+        // OS FINGERPRINTING (TTL)
         int ttl = 0;
         socklen_t optlen = sizeof(ttl);
         char* os_guess = "Unknown";
@@ -43,14 +43,12 @@ void* tcp_connect_mod(void* arg) {
             else if (ttl <= 255) os_guess = "Network Eq.";
         }
 
-        // --- ФИЧА: BANNER GRABBING ---
+        // BANNER GRABBING
         char buffer[256] = {0};
-        // Посылаем пустой запрос, чтобы спровоцировать ответ (например, от HTTP)
         send(sock, "\r\n", 2, 0); 
         int bytes = recv(sock, buffer, sizeof(buffer) - 1, 0);
         
         if (bytes > 0) {
-            // Очистка баннера от спецсимволов для красивого вывода
             for(int i = 0; i < bytes; i++) {
                 if(buffer[i] < 32 || buffer[i] > 126) buffer[i] = ' ';
             }
@@ -61,15 +59,18 @@ void* tcp_connect_mod(void* arg) {
                    task->port, ttl, os_guess);
         }
 
-        // --- ФИЧА: HONEYPOT CHECK ---
         if (open_ports_count > 50) {
-            printf(CLR_RED "[!] WARNING: More than 50 ports open. Possible Honeypot detected on %s\n" CLR_RESET, task->ip);
-            // Сбрасываем счетчик, чтобы не спамить
+            printf(CLR_RED "[!] WARNING: Possible Honeypot on %s\n" CLR_RESET, task->ip);
             open_ports_count = -9999; 
         }
     }
 
-    CLOSE_SOCKET(sock);
+    // ИСПРАВЛЕНО: Используем кроссплатформенный метод закрытия
+#ifdef _WIN32
+    closesocket(sock);
+#else
+    close(sock);
+#endif
     free(task);
     return NULL;
 }
