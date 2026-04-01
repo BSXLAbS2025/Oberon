@@ -12,7 +12,7 @@ int json_mode = 0;
 void print_bar(int current, int total) {
     if (json_mode) return;
     float progress = (float)current / total * 100;
-    printf("\r" CLR_CYAN "Scanning... [%.1f%%]" CLR_RESET, progress "\n");
+    printf("\r" CLR_CYAN "Scanning... [%.1f%%] \n" CLR_RESET, progress);
     fflush(stdout);
 }
 
