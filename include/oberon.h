@@ -25,6 +25,7 @@
 #else
     #include <dlfcn.h>
     #include <dirent.h>
+    #include <sys/time.h>
     #include <sys/socket.h>
     #include <arpa/inet.h>
     #include <unistd.h>
