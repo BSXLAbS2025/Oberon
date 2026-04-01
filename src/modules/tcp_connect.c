@@ -1,5 +1,4 @@
 #include "oberon.h"
-#include "main.c"
 
 extern int json_mode; // Берем флаг из main.c
 static int first_json_entry = 1;
