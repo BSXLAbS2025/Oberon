@@ -5,8 +5,10 @@ static int open_ports_count = 0;
 
 void* tcp_connect_mod(void* arg) {
     scan_task_t* task = (scan_task_t*)arg;
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
+    
+    // Используем SOCKET из твоего хедера
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == INVALID_SOCKET) {
         free(task);
         return NULL;
     }
@@ -25,6 +27,7 @@ void* tcp_connect_mod(void* arg) {
 #endif
 
     struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(task->port);
     // ИСПРАВЛЕНО: s_addr вместо s_s_addr
@@ -33,7 +36,7 @@ void* tcp_connect_mod(void* arg) {
     if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
         open_ports_count++;
 
-        // OS FINGERPRINTING (TTL)
+        // --- OS FINGERPRINTING (TTL) ---
         int ttl = 0;
         socklen_t optlen = sizeof(ttl);
         char* os_guess = "Unknown";
@@ -43,7 +46,7 @@ void* tcp_connect_mod(void* arg) {
             else if (ttl <= 255) os_guess = "Network Eq.";
         }
 
-        // BANNER GRABBING
+        // --- BANNER GRABBING ---
         char buffer[256] = {0};
         send(sock, "\r\n", 2, 0); 
         int bytes = recv(sock, buffer, sizeof(buffer) - 1, 0);
@@ -65,12 +68,8 @@ void* tcp_connect_mod(void* arg) {
         }
     }
 
-    // ИСПРАВЛЕНО: Используем кроссплатформенный метод закрытия
-#ifdef _WIN32
-    closesocket(sock);
-#else
-    close(sock);
-#endif
+    // ИСПРАВЛЕНО: используем close_socket из твоего хедера
+    close_socket(sock);
     free(task);
     return NULL;
 }
