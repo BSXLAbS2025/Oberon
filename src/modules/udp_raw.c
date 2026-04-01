@@ -1,4 +1,6 @@
-#include "modules.h"
+#include "oberon.h"
+
+extern int json_mode;
 
 THREAD_FUNC udp_raw_mod(void* arg) {
     scan_task_t *task = (scan_task_t*)arg;
@@ -13,17 +15,22 @@ THREAD_FUNC udp_raw_mod(void* arg) {
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
 #else
     struct timeval tv = {0, 800000};
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
 #endif
 
     server.sin_family = AF_INET;
     server.sin_port = htons(task->port);
     server.sin_addr.s_addr = inet_addr(task->ip);
 
+    // UDP - протокол без подтверждения, посылаем пустой пакет
     sendto(sock, "", 0, 0, (struct sockaddr *)&server, sizeof(server));
     char b;
     if (recvfrom(sock, &b, 1, 0, NULL, NULL) >= 0) {
-        printf("\r" CLR_YELLOW "[!] Port %-5d (UDP) OPEN/FILTERED" CLR_RESET " \n", task->port);
+        if (json_mode) {
+            printf("{\"port\":%d,\"type\":\"UDP\",\"status\":\"open/filtered\"},", task->port);
+        } else {
+            printf("\r" CLR_YELLOW "[!] Port %-5d (UDP) OPEN/FILTERED" CLR_RESET " \n", task->port);
+        }
     }
     
     close_socket(sock);
