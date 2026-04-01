@@ -50,10 +50,10 @@ void run_external_module(char *target_ip, int port, char *requested_flag) {
 int main(int argc, char *argv[]) {
     // 1. Проверка аргументов (минимум 5: exe target start end mode)
     if (argc < 5) {
-        printf(CLR_CYAN "\n[ OBERON MULTI-THREADED v4.0-Patch 2 ]\n" CLR_RESET);
+        printf(CLR_CYAN "\n[ OBERON MULTI-THREADED v4.0 RC3 ]\n" CLR_RESET);
         printf("Usage: %s <target> <start> <end> <mode> [options]\n", argv[0]);
         printf("Modes:   -t (TCP), -u (UDP + Banner)\n");
-        printf("Options: -s (Stealth mode, 200ms delay per port)\n");
+        printf("Options: -s (Stealth mode, 200ms delay per port) -j (JSON output)\n");
         return 0;
     }
 
