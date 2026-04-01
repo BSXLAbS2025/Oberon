@@ -1,4 +1,4 @@
-### Oberon Network Scanner v4.0
+### Oberon Network Scanner v4.0 RC3
 
 Oberon is a lightweight, high-performance network reconnaissance tool written in C99. Designed for ethical hackers and security enthusiasts, it provides essential features for discovery and service identification across Linux, Windows, macOS, and Android (Termux).
 
