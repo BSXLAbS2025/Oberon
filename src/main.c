@@ -3,14 +3,20 @@
 
 #define MAX_THREADS 100
 
-// Прогресс-бар для визуализации
+// --- SMART SCAN DATA ---
+int top_ports[] = {21, 22, 23, 25, 53, 80, 110, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 8080, 8443};
+int top_ports_count = sizeof(top_ports) / sizeof(top_ports[0]);
+
+// Глобальные флаги для модулей
+int json_mode = 0;
+
 void print_bar(int current, int total) {
+    if (json_mode) return; // В JSON режиме не мусорим в stdout барами
     float progress = (float)current / total * 100;
     printf("\r" CLR_CYAN "Scanning... [%.1f%%]" CLR_RESET, progress);
     fflush(stdout);
 }
 
-// Поиск и запуск внешних плагинов (.so/.dll)
 void run_external_module(char *target_ip, int port, char *requested_flag) {
     char mod_path[512];
 #ifdef _WIN32
@@ -29,7 +35,6 @@ void run_external_module(char *target_ip, int port, char *requested_flag) {
 #endif
             LIB_HANDLE hMod = LOAD_LIB(mod_path);
             if (hMod) {
-                // Ищем в плагине строку module_flag
                 char **mod_flag = (char**)GET_FUNC(hMod, "module_flag");
                 if (mod_flag && strcmp(*mod_flag, requested_flag) == 0) {
                     module_run_func run = (module_run_func)GET_FUNC(hMod, "run_module");
@@ -48,21 +53,20 @@ void run_external_module(char *target_ip, int port, char *requested_flag) {
 }
 
 int main(int argc, char *argv[]) {
-    // 1. Проверка аргументов (минимум 5: exe target start end mode)
     if (argc < 5) {
         printf(CLR_CYAN "\n[ OBERON MULTI-THREADED v4.0 RC3 ]\n" CLR_RESET);
         printf("Usage: %s <target> <start> <end> <mode> [options]\n", argv[0]);
         printf("Modes:   -t (TCP), -u (UDP + Banner)\n");
-        printf("Options: -s (Stealth mode, 200ms delay per port) -j (JSON output)\n");
+        printf("Smart:   Use '0 0' as range to scan top ports.\n");
+        printf("Options: -s (Stealth), -j (JSON output)\n");
         return 0;
     }
 
     init_networking();
 
-    // 2. Инициализация параметров
     char *ip = resolve_host(argv[1]);
     if (!ip) { 
-        printf(CLR_RED "Error: Host %s not found\n" CLR_RESET, argv[1]); 
+        if (!json_mode) printf(CLR_RED "Error: Host %s not found\n" CLR_RESET, argv[1]); 
         return 1; 
     }
     
@@ -70,60 +74,69 @@ int main(int argc, char *argv[]) {
     int end = atoi(argv[3]);
     char *mode = argv[4];
     
-    // Проверяем наличие 5-го аргумента для Stealth режима
-    int is_stealth = (argc > 5 && strcmp(argv[5], "-s") == 0);
-    int total = end - start + 1;
+    // Парсинг дополнительных опций
+    int is_stealth = 0;
+    for (int i = 5; i < argc; i++) {
+        if (strcmp(argv[i], "-s") == 0) is_stealth = 1;
+        if (strcmp(argv[i], "-j") == 0) json_mode = 1;
+    }
 
-    printf(CLR_CYAN "[*] Target: %s (%s) | Mode: %s %s\n" CLR_RESET, 
-           argv[1], ip, mode, is_stealth ? "[STEALTH ACTIVE]" : "");
+    int is_smart = (start == 0 && end == 0);
+    int total_tasks = is_smart ? top_ports_count : (end - start + 1);
 
-    // 3. Если режим не стандартный (-t/-u), пробуем загрузить плагин
+    if (!json_mode) {
+        printf(CLR_CYAN "[*] Target: %s (%s) | Mode: %s %s %s\n" CLR_RESET, 
+               argv[1], ip, mode, 
+               is_smart ? "[SMART]" : "", 
+               is_stealth ? "[STEALTH]" : "");
+    } else {
+        // Начало JSON объекта
+        printf("{\"target\":\"%s\",\"ip\":\"%s\",\"results\":[\n", argv[1], ip);
+    }
+
+    // Если режим не стандартный, ищем плагин
     if (strcmp(mode, "-t") != 0 && strcmp(mode, "-u") != 0) {
-        printf(CLR_YELLOW "[*] Searching for external module for flag: %s\n" CLR_RESET, mode);
-        run_external_module(ip, start, mode);
+        run_external_module(ip, is_smart ? 80 : start, mode);
         goto cleanup;
     }
 
-    // 4. Основной цикл сканирования
-    for (int p = start; p <= end; p++) {
+    for (int i = 0; i < total_tasks; i++) {
+        int current_port = is_smart ? top_ports[i] : (start + i);
+        
         scan_task_t *task = malloc(sizeof(scan_task_t));
         if (!task) continue;
         
         strncpy(task->ip, ip, 64);
-        task->port = p;
+        task->port = current_port;
 
         THREAD_HANDLE thread;
 #ifdef _WIN32
-        // Выбираем функцию в зависимости от режима
         LPTHREAD_START_ROUTINE func = (strcmp(mode, "-u") == 0) ? 
             (LPTHREAD_START_ROUTINE)udp_raw_mod : (LPTHREAD_START_ROUTINE)tcp_connect_mod;
-            
         thread = CreateThread(NULL, 0, func, task, 0, NULL);
         if (thread) CloseHandle(thread);
 #else
         void* (*func)(void*) = (strcmp(mode, "-u") == 0) ? udp_raw_mod : tcp_connect_mod;
-        
-        if (pthread_create(&thread, NULL, func, task) == 0) {
-            pthread_detach(thread);
-        }
+        if (pthread_create(&thread, NULL, func, task) == 0) pthread_detach(thread);
 #endif
 
-        // 5. Обработка задержки (Stealth vs Normal)
         if (is_stealth) {
-            sleep_ms(200); // 200мс между каждым портом
-        } else {
-            // Обычный контроль нагрузки (пауза 50мс каждые 100 потоков)
-            if ((p - start + 1) % MAX_THREADS == 0) {
-                sleep_ms(50);
-            }
+            sleep_ms(200);
+        } else if ((i + 1) % MAX_THREADS == 0) {
+            sleep_ms(50);
         }
 
-        // Обновляем бар каждые 10 портов
-        if (p % 10 == 0 || p == end) print_bar(p - start + 1, total);
+        print_bar(i + 1, total_tasks);
     }
 
-    printf("\n" CLR_GREEN "[+] Scan finished. Cleaning up..." CLR_RESET "\n");
-    sleep_ms(1500); // Даем время последним потокам вывести результат
+    if (!json_mode) {
+        printf("\n" CLR_GREEN "[+] Scan finished." CLR_RESET "\n");
+    } else {
+        // Закрываем JSON (тут логика запятых чуть сложнее, но для начала сойдет)
+        printf("\n]}\n");
+    }
+
+    sleep_ms(2000); // Даем потокам доработать
 
 cleanup:
     cleanup_networking();
